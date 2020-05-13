@@ -435,6 +435,9 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         file_mode = True
         # Check filetype
         ftype = filename[-3:]
+        if ftype == 'vtk':
+            ftype = 'vtp'
+            filename = filename.replace('vtk', 'vtp')
         if ftype == 'ply':
             writer = vtk.vtkPLYWriter()
         elif ftype == 'vtp':
@@ -446,8 +449,6 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
                 writer.SetDataModeToAscii()
         elif ftype == 'stl':
             writer = vtk.vtkSTLWriter()
-        elif ftype == 'vtk':
-            writer = vtk.vtkPolyDataWriter()
         else:
             raise Exception('Filetype must be either "ply", "stl", or "vtk"')
 
@@ -462,6 +463,9 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
             writer.SetFileTypeToBinary()
         elif file_mode:
             writer.SetFileTypeToASCII()
+        writer.SetDataModeToAppended()
+        writer.SetCompressorTypeToLZ4()
+        writer.SetCompressionLevel(9)
         writer.Write()
 
 
@@ -830,6 +834,9 @@ class UnstructuredGrid(vtkUnstructuredGrid, PointGrid, UnstructuredGridFilters):
 
         writer.SetFileName(filename)
         writer.SetInputData(self)
+        writer.SetDataModeToAppended()
+        writer.SetCompressorTypeToLZ4()
+        writer.SetCompressionLevel(9)
         return writer.Write()
 
     @property
@@ -1087,6 +1094,9 @@ class StructuredGrid(vtkStructuredGrid, PointGrid):
         # Write
         writer.SetFileName(filename)
         writer.SetInputData(self)
+        writer.SetDataModeToAppended()
+        writer.SetCompressorTypeToLZ4()
+        writer.SetCompressionLevel(9)
         writer.Write()
 
     @property

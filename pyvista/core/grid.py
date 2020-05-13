@@ -276,6 +276,10 @@ class RectilinearGrid(vtkRectilinearGrid, Grid):
         writer.SetInputData(self)
         if binary and legacy:
             writer.SetFileTypeToBinary()
+
+        writer.SetDataModeToAppended()
+        writer.SetCompressorTypeToLZ4()
+        writer.SetCompressionLevel(9)
         writer.Write()
 
     @property
@@ -551,6 +555,9 @@ class UniformGrid(vtkImageData, Grid, UniformGridFilters):
         writer.SetInputData(self)
         if binary and legacy:
             writer.SetFileTypeToBinary()
+        writer.SetDataModeToAppended()
+        writer.SetCompressorTypeToLZ4()
+        writer.SetCompressionLevel(9)
         writer.Write()
 
     @property

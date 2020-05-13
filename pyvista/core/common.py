@@ -1216,6 +1216,14 @@ class Common(DataSetFilters, DataObject):
             raise TypeError('Empty array unable to be added')
         if not isinstance(scalars, np.ndarray):
             scalars = np.array(scalars)
+        if np.issubdtype(scalars.dtype, np.str_) or np.issubdtype(scalars.dtype, np.string_):
+            try:
+                unique_values = np.unique(scalars.astype('str'))
+                scalars = np.searchsorted(unique_values, scalars)
+                self.add_field_array(unique_values, name)
+            except TypeError:
+                pass
+
         # Now check array size to determine which field to place array
         if scalars.shape[0] == self.n_points:
             self.point_arrays[name] = scalars
