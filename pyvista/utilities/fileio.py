@@ -107,6 +107,14 @@ def set_vtkwriter_mode(vtk_writer, use_binary=True):
             vtk_writer.SetDataModeToBinary()
         else:
             vtk_writer.SetDataModeToAscii()
+
+    try:
+        vtk_writer.SetDataModeToAppended()
+        vtk_writer.SetCompressorTypeToLZ4()
+        vtk_writer.SetCompressionLevel(9)
+    except:
+        pass
+
     return vtk_writer
 
 
@@ -382,7 +390,7 @@ def read_exodus(filename,
 
 def read_plot3d(filename, q_filenames=(), auto_detect=True, attrs=None):
     """Read a Plot3D grid file (e.g., grid.in) and optional q file(s).
-    
+
     Parameters
     ----------
     filename : str
