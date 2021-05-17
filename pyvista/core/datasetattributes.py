@@ -3,6 +3,7 @@
 from collections.abc import Iterable
 
 import numpy as np
+import pandas as pd
 from typing import Union, Iterator, Optional, List, Tuple, Dict, Sequence, Any
 
 from pyvista import _vtk
@@ -169,7 +170,7 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         return narray
 
     def append(self, narray: Union[Sequence[Number], Number, np.ndarray], name: str, deep_copy=False,
-               active_vectors=True, active_scalars=True) -> None:
+               active_vectors=True, active_scalars=True, categorical_to_ints=True) -> None:
         """Add an array to this object.
 
         Parameters
@@ -191,6 +192,16 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         """
         if narray is None:
             raise TypeError('narray cannot be None.')
+        if isinstance(narray, pd.Series):
+            if np.issubdtype(narray.dtype, np.object):
+                narray = narray.convert_dtypes()
+                if narray.dtype.name is 'string':
+                    narray = narray.to_numpy(str)
+                # elif dtype.name is 'Int64':
+                #     narray.has
+                else:
+                    narray = narray.to_numpy()
+
         if isinstance(narray, Iterable):
             narray = pyvista_ndarray(narray)
 
@@ -209,6 +220,18 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
 
         if narray.shape[0] != array_len:
             raise ValueError(f'narray length of ({narray.shape[0]}) != required length ({array_len})')
+
+        # DATACLOUD PREVIOUS CATEGORICAL CHECK
+		# WE WERE CONVERTING STRINGS TO FIELD ARRAY AND USING A LOOKUP SYSTEM
+
+        if categorical_to_ints:
+            if not (type(self.VTKObject).__vtkname__ == 'vtkFieldData'):
+                if np.issubdtype(narray.dtype, np.str_) or np.issubdtype(narray.dtype, np.string_):
+                    # import ipdb; ipdb.set_trace() # BREAKPOINT
+                    narray = narray.astype(str)
+                    unique_values = np.unique(narray)
+                    narray = np.searchsorted(unique_values, narray)
+                    self.dataset.add_field_array(unique_values, name)
 
         if narray.dtype == np.bool_:
             self.dataset.association_bitarray_names[self.association].add(name)
