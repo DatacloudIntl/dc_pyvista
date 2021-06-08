@@ -702,6 +702,8 @@ class DataSet(DataSetFilters, DataObject):
             fmt += "<tr><td>"
         # Get the header info
         fmt += self.head(display=False, html=True)
+        if self.n_arrays > 50:
+            return fmt
         # Fill out arrays
         if self.n_arrays > 0:
             fmt += "</td><td>"

@@ -247,10 +247,19 @@ class Table(_vtk.vtkTable, DataObject):
             data_frame[name] = array
         return data_frame
 
-    def save(self, *args, **kwargs):
-        """Save the table."""
-        raise NotImplementedError("Please use the `to_pandas` method and "
-                                  "harness Pandas' wonderful file IO methods.")
+    def save(self, filepath):
+        """Save the table as a vtt."""
+        tablewriter = _vtk.vtkXMLTableWriter()
+        tablewriter.SetDataModeToAppended()
+        tablewriter.SetCompressorTypeToLZ4()
+        tablewriter.SetCompressionLevel(9)
+        tablewriter.SetFileName(filepath)
+        tablewriter.SetInputData(self)
+        # print(f"Creating file {output_path}")
+        tablewriter.Write()
+
+        # raise NotImplementedError("Please use the `to_pandas` method and "
+        #                           "harness Pandas' wonderful file IO methods.")
 
     def get_data_range(self, arr=None, preference='row'):
         """Get the non-NaN min and max of a named array.

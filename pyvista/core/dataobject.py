@@ -89,6 +89,13 @@ class DataObject:
 
         writer = self._WRITERS[file_ext]()
         fileio.set_vtkwriter_mode(vtk_writer=writer, use_binary=binary)
+        try:
+            writer.SetDataModeToAppended()
+            writer.SetCompressorTypeToLZ4()
+            writer.SetCompressionLevel(9)
+        except:
+            pass
+
         writer.SetFileName(str(file_path))
         writer.SetInputData(self)
         writer.Write()

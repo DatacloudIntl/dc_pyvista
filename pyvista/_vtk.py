@@ -87,7 +87,9 @@ if VTK9:
                                      vtkXMLStructuredGridReader,
                                      vtkXMLStructuredGridWriter,
                                      vtkXMLMultiBlockDataReader,
-                                     vtkXMLMultiBlockDataWriter)
+                                     vtkXMLMultiBlockDataWriter,
+                                     vtkXMLTableWriter,
+                                     )
     from vtkmodules.vtkIOEnSight import vtkGenericEnSightReader
     from vtkmodules.vtkIOLegacy import (vtkDataWriter,
                                         vtkDataReader,
