@@ -55,7 +55,7 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
 
     def __setitem__(self, key: str, value: np.ndarray):
         """Implement setting with the [] operator."""
-        self.append(narray=value, name=key)
+        self.append(narray=value, name=key, categorical_to_ints=False)
 
     def __delitem__(self, key: Union[str, int]):
         """Implement del with array name or index."""
@@ -170,7 +170,7 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         return narray
 
     def append(self, narray: Union[Sequence[Number], Number, np.ndarray], name: str, deep_copy=False,
-               active_vectors=True, active_scalars=True, categorical_to_ints=True) -> None:
+               active_vectors=True, active_scalars=True, categorical_to_ints=True, string_na_value='') -> None:
         """Add an array to this object.
 
         Parameters
@@ -192,13 +192,12 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         """
         if narray is None:
             raise TypeError('narray cannot be None.')
+
         if isinstance(narray, pd.Series):
             if np.issubdtype(narray.dtype, np.object):
                 narray = narray.convert_dtypes()
                 if narray.dtype.name is 'string':
-                    narray = narray.to_numpy(str)
-                # elif dtype.name is 'Int64':
-                #     narray.has
+                    narray = narray.to_numpy(str, na_value=string_na_value)
                 else:
                     narray = narray.to_numpy()
 
@@ -225,9 +224,8 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
 		# WE WERE CONVERTING STRINGS TO FIELD ARRAY AND USING A LOOKUP SYSTEM
 
         if categorical_to_ints:
-            if not (type(self.VTKObject).__vtkname__ == 'vtkFieldData'):
+            if not (type(self.VTKObject).__vtkname__ in ['vtkFieldData']):
                 if np.issubdtype(narray.dtype, np.str_) or np.issubdtype(narray.dtype, np.string_):
-                    # import ipdb; ipdb.set_trace() # BREAKPOINT
                     narray = narray.astype(str)
                     unique_values = np.unique(narray)
                     narray = np.searchsorted(unique_values, narray)
@@ -355,7 +353,7 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         for array_name in self.keys():
             self.remove(key=array_name)
 
-    def update(self, array_dict: Union[Dict[str, np.ndarray], 'DataSetAttributes']):
+    def update(self, array_dict: Union[Dict[str, np.ndarray], 'DataSetAttributes'], categorical_to_ints=True, string_na_value=''):
         """Update arrays in this object.
 
         For each key, value given, add the pair, if it already exists,
@@ -367,7 +365,8 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
             A dictionary of (array name, numpy.ndarray)
         """
         for name, array in array_dict.items():
-            self[name] = array.copy()
+            # self[name] = array.copy()
+            self.append(narray=array.copy(), name=name, categorical_to_ints=categorical_to_ints, string_na_value=string_na_value)
 
     def _raise_index_out_of_bounds(self, index: Any):
         max_index = self.VTKObject.GetNumberOfArrays()
