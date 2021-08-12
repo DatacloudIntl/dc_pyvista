@@ -170,7 +170,9 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         return narray
 
     def append(self, narray: Union[Sequence[Number], Number, np.ndarray], name: str, deep_copy=False,
-               active_vectors=True, active_scalars=True, categorical_to_ints=True, string_na_value='') -> None:
+               active_vectors=True, active_scalars=True, categorical_to_ints=True,
+               string_na_value=pd.NA,
+               ) -> None:
         """Add an array to this object.
 
         Parameters
@@ -196,10 +198,14 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         if isinstance(narray, pd.Series):
             if np.issubdtype(narray.dtype, np.object):
                 narray = narray.convert_dtypes()
-                if narray.dtype.name is 'string':
+                if np.issubdtype(narray.dtype.type, np.str_):
                     narray = narray.to_numpy(str, na_value=string_na_value)
                 else:
                     narray = narray.to_numpy()
+            # if np.issubdtype(narray.dtype, np.object) or\
+            #         np.issubdtype(narray.dtype, np.str_):
+            #     narray = narray.to_numpy(str, na_value=string_na_value)
+
 
         if isinstance(narray, Iterable):
             narray = pyvista_ndarray(narray)
@@ -229,6 +235,13 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
                     narray = narray.astype(str)
                     unique_values = np.unique(narray)
                     narray = np.searchsorted(unique_values, narray)
+
+                    # In case we want to keep nans on the indices
+                    # nans = pd.isna(narray) | np.isin(narray, ['nan'])
+                    # unique_values = np.unique(narray)
+                    # narray = np.searchsorted(unique_values, narray).astype(float)
+                    # narray[nans] = np.nan
+
                     self.dataset.add_field_array(unique_values, name)
 
         if narray.dtype == np.bool_:
@@ -353,7 +366,7 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         for array_name in self.keys():
             self.remove(key=array_name)
 
-    def update(self, array_dict: Union[Dict[str, np.ndarray], 'DataSetAttributes'], categorical_to_ints=True, string_na_value=''):
+    def update(self, array_dict: Union[Dict[str, np.ndarray], 'DataSetAttributes'], categorical_to_ints=True):
         """Update arrays in this object.
 
         For each key, value given, add the pair, if it already exists,
@@ -366,7 +379,7 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         """
         for name, array in array_dict.items():
             # self[name] = array.copy()
-            self.append(narray=array.copy(), name=name, categorical_to_ints=categorical_to_ints, string_na_value=string_na_value)
+            self.append(narray=array.copy(), name=name, categorical_to_ints=categorical_to_ints)
 
     def _raise_index_out_of_bounds(self, index: Any):
         max_index = self.VTKObject.GetNumberOfArrays()

@@ -26,6 +26,7 @@ READERS = {
     '.vts': _vtk.vtkXMLStructuredGridReader,
     '.vtm': _vtk.vtkXMLMultiBlockDataReader,
     '.vtmb': _vtk.vtkXMLMultiBlockDataReader,
+    '.vtt': _vtk.vtkXMLTableReader,
     '.case': _vtk.vtkGenericEnSightReader,
     # Image formats:
     '.bmp': _vtk.vtkBMPReader,
