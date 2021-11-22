@@ -19,6 +19,9 @@ class pyvista_ndarray(np.ndarray):
         elif isinstance(array, _vtk.vtkAbstractArray):
             obj = convert_array(array).view(cls)
             obj.VTKObject = array
+        else:
+            raise TypeError(f'pyvista_ndarray got an invalid type {type(array)}.  '
+                            'Expected an Iterable or vtk.vtkAbstractArray')
 
         obj.association = association
         obj.dataset = _vtk.vtkWeakReference()
@@ -40,8 +43,12 @@ class pyvista_ndarray(np.ndarray):
         _vtk.VTKArray.__array_finalize__(self, obj)
         if np.shares_memory(self, obj):
             self.dataset = getattr(obj, 'dataset', None)
-            self.association = getattr(obj, 'association', None)
+            self.association = getattr(obj, 'association', FieldAssociation.NONE)
             self.VTKObject = getattr(obj, 'VTKObject', None)
+        else:
+            self.dataset = None
+            self.association = FieldAssociation.NONE
+            self.VTKObject = None
 
     def __setitem__(self, key: int, value):
         """Implement [] set operator.
@@ -53,5 +60,10 @@ class pyvista_ndarray(np.ndarray):
         super().__setitem__(key, value)
         if self.VTKObject is not None:
             self.VTKObject.Modified()
+
+        # the associated dataset should also be marked as modified
+        dataset = self.dataset
+        if dataset is not None and dataset.Get():
+            dataset.Get().Modified()
 
     __getattr__ = _vtk.VTKArray.__getattr__
