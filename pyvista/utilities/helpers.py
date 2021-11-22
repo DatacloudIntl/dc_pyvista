@@ -1,5 +1,6 @@
 """Supporting functions for polydata and grid objects."""
 
+import os
 import collections.abc
 import enum
 import logging
@@ -112,8 +113,8 @@ def convert_array(arr, name=None, deep=0, array_type=None):
         else:
             # This will handle numerical data
             arr = np.ascontiguousarray(arr)
-            vtk_data = _vtk.numpy_to_vtk(num_array=arr, deep=deep, array_type=array_type)
-
+            vtk_data = _vtk.numpy_to_vtk(num_array=arr, deep=deep,
+                                         array_type=array_type)
         if isinstance(name, str):
             vtk_data.SetName(name)
         return vtk_data
@@ -251,7 +252,7 @@ def get_array(mesh, name, preference='cell', info=False, err=False):
 
 def vtk_points(points, deep=True):
     """Convert numpy array or array-like to a vtkPoints object."""
-    points = np.asarray(points)
+    points = np.asanyarray(points)
 
     # verify is numeric
     if not np.issubdtype(points.dtype, np.number):
@@ -270,26 +271,28 @@ def vtk_points(points, deep=True):
                          f'Shape is {points.shape} and should be (X, 3)')
 
     # points must be contiguous
-    points = np.ascontiguousarray(points)
+    points = np.require(points, requirements=['C'])
     vtkpts = _vtk.vtkPoints()
-    vtkpts.SetData(_vtk.numpy_to_vtk(points, deep=deep))
+    vtk_arr = _vtk.numpy_to_vtk(points, deep=deep)
+    vtkpts.SetData(vtk_arr)
     return vtkpts
 
 
 def line_segments_from_points(points):
     """Generate non-connected line segments from points.
 
-    Assumes points are ordered as line segments and an even number of points
-    are
+    Assumes points are ordered as line segments and an even number of
+    points.
 
     Parameters
     ----------
     points : np.ndarray
-        Points representing line segments. An even number must be given as
-        every two vertices represent a single line segment. For example, two
-        line segments would be represented as:
+        Points representing line segments. An even number must be
+        given as every two vertices represent a single line
+        segment. For example, two line segments would be represented
+        as:
 
-        np.array([[0, 0, 0], [1, 0, 0], [1, 0, 0], [1, 1, 0]])
+        ``np.array([[0, 0, 0], [1, 0, 0], [1, 0, 0], [1, 1, 0]])``
 
     Returns
     -------
@@ -298,13 +301,13 @@ def line_segments_from_points(points):
 
     Examples
     --------
-    This example plots two line segments at right angles to each other line.
+    This example plots two line segments at right angles to each other.
 
     >>> import pyvista
     >>> import numpy as np
     >>> points = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 0], [1, 1, 0]])
     >>> lines = pyvista.lines_from_points(points)
-    >>> lines.plot() # doctest:+SKIP
+    >>> cpos = lines.plot()
 
     """
     if len(points) % 2 != 0:
@@ -367,7 +370,7 @@ def make_tri_mesh(points, faces):
         triangle mesh.
 
     faces : np.ndarray
-        Array of indices with shape (M, 3) containing the triangle
+        Array of indices with shape ``(M, 3)`` containing the triangle
         indices.
 
     Returns
@@ -388,7 +391,7 @@ def make_tri_mesh(points, faces):
     >>> faces = np.array([[0, 1, 4], [4, 7, 6], [2, 5, 4], [4, 5, 8],
     ...                   [0, 4, 3], [3, 4, 6], [1, 2, 4], [4, 8, 7]])
     >>> tri_mesh = pyvista.make_tri_mesh(points, faces)
-    >>> tri_mesh.plot(show_edges=True) # doctest:+SKIP
+    >>> cpos = tri_mesh.plot(show_edges=True)
 
     """
     if points.shape[1] != 3:
@@ -752,9 +755,10 @@ def try_callback(func, *args):
 def check_depth_peeling(number_of_peels=100, occlusion_ratio=0.0):
     """Check if depth peeling is available.
 
-    Attempts to use depth peeling to see if it is available for the current
-    environment. Returns ``True`` if depth peeling is available and has been
-    successfully leveraged, otherwise ``False``.
+    Attempts to use depth peeling to see if it is available for the
+    current environment. Returns ``True`` if depth peeling is
+    available and has been successfully leveraged, otherwise
+    ``False``.
 
     """
     # Try Depth Peeling with a basic scene
@@ -940,3 +944,72 @@ def axis_rotation(points, angle, inplace=False, deg=True, axis='z'):
 
     rot_mat = transformations.axis_angle_rotation(axis_to_vec[axis], angle, deg=deg)
     return transformations.apply_transformation_to_points(rot_mat, points, inplace=inplace)
+
+
+def cubemap(path='', prefix='', ext='.jpg'):
+    """Construct a cubemap from 6 images.
+
+    Each of the 6 images must be in the following format:
+
+    - <prefix>negx<ext>
+    - <prefix>negy<ext>
+    - <prefix>negz<ext>
+    - <prefix>posx<ext>
+    - <prefix>posy<ext>
+    - <prefix>posz<ext>
+
+    Prefix may be empty, and extension will default to ``'.jpg'``
+
+    For example, if you have 6 images with the skybox2 prefix:
+
+    - ``'skybox2-negx.jpg'``
+    - ``'skybox2-negy.jpg'``
+    - ``'skybox2-negz.jpg'``
+    - ``'skybox2-posx.jpg'``
+    - ``'skybox2-posy.jpg'``
+    - ``'skybox2-posz.jpg'``
+
+    Parameters
+    ----------
+    prefix : str, optional
+        Prefix to the filename.
+
+    ext : str, optional
+        The filename extension.  For example ``'.jpg'``.
+
+    path : str, optional
+        Directory containing the cubemap images.
+
+    Returns
+    -------
+    pyvista.Texture
+        Texture with cubemap.
+
+    Examples
+    --------
+    >>> import pyvista
+    >>> skybox = pyvista.cubemap('my_directory', 'skybox', '.jpeg')  # doctest:+SKIP
+    """
+    sets = ['posx', 'negx', 'posy', 'negy', 'posz', 'negz']
+    image_paths = [os.path.join(path, f'{prefix}{suffix}{ext}') for suffix in sets]
+
+    for image_path in image_paths:
+        if not os.path.isfile(image_path):
+            file_str = '\n'.join(image_paths)
+            raise FileNotFoundError(f'Unable to locate {image_path}\n'
+                                    'Expected to find the following files:\n'
+                                    f'{file_str}')
+
+    texture = pyvista.Texture()
+    texture.cube_map = True  # Must be set prior to setting images
+
+    # add each image to the cubemap
+    for i, fn in enumerate(image_paths):
+        image = pyvista.read(fn)
+        flip = _vtk.vtkImageFlip()
+        flip.SetInputDataObject(image)
+        flip.SetFilteredAxis(1)  # flip y axis
+        flip.Update()
+        texture.SetInputDataObject(i, flip.GetOutput())
+
+    return texture

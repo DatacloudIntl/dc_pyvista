@@ -23,7 +23,7 @@ python -m pip install -e .
 ## Questions
 
 For general questions about the project, its applications, or about software
-usage, please create an issue in the [pyvista/pyvista-support](https://github.com/pyvista/pyvista-support)
+usage, please create a discussion in the [Discussions](https://github.com/pyvista/pyvista/discussions)
 repository where the community can collectively address your questions.
 You are also welcome to join us on [Slack](http://slack.pyvista.org)
 or send one of the developers an email.
@@ -144,7 +144,19 @@ following the steps in the
 
 We adhere to [PEP 8](https://www.python.org/dev/peps/pep-0008/)
 wherever possible, except that line widths are permitted to go beyond
-79 characters to a max of 90 to 100 characters.
+79 characters to a max of 99 characters for code.  This should
+tend to be the exception rather than the norm.
+
+As for docstrings, follow the guidelines specified in [PEP 8 Maximum
+Line Length](https://www.python.org/dev/peps/pep-0008/#maximum-line-length)
+of limiting docstrings to 72 characters per line.  This follows the
+directive:
+
+> Some teams strongly prefer a longer line length. For code maintained
+> exclusively or primarily by a team that can reach agreement on this
+> issue, it is okay to increase the line length limit up to 99
+> characters, provided that comments and docstrings are still wrapped
+> at 72 characters.
 
 Outside of PEP 8, when coding please consider [PEP 20 -- The Zen of Python](https://www.python.org/dev/peps/pep-0020/).  When in doubt:
 
@@ -192,13 +204,25 @@ Run the primary test suite and generate coverage report:
 python -m pytest -v --cov pyvista
 ```
 
-Run all code examples in the docstrings:
+Unit testing can take some time, if you wish to speed it up, set the
+number of processors with the ``-n`` flag.  This uses ``pytest-xdist``
+to leverage multiple processes.  Example usage:
 
 ```bash
+python -m pytest -n <NUMCORE> --cov pyvista
+```
+
+Run all code examples in the docstrings.  Be sure to export the
+``PYVISTA_OFF_SCREEN`` environmental variable to enable off-screen
+plotting.
+
+```bash
+export PYVISTA_OFF_SCREEN=True
 python -m pytest -v --doctest-modules pyvista
 ```
 
-Run documentation testing by running
+Run documentation testing by running:
+
 ```bash
 make
 ```
@@ -213,13 +237,13 @@ codespell pyvista/ examples/ tests/ -S "*.pyc,*.txt,*.gif,*.png,*.jpg,*.ply,*.vt
 And finally, test the documentation examples:
 
 ```bash
-cd docs
+cd doc
 make clean
 make doctest
 make html -b linkcheck
 ```
 
-The finished documentation can be found in the `docs/_build/html` directory.
+The finished documentation can be found in the `doc/_build/html` directory.
 
 #### Creating a New Pull Request
 
@@ -255,12 +279,12 @@ The main features of our branching model are:
   side-effects or bugs that were not caught through unit testing.
 - There will be one or many `release/` branches based on minor
   releases (for example `release/0.24`) which contain a stable version
-  of the code base that is also reflected on PyPi/.  Hotfixes from
+  of the code base that is also reflected on PyPI/.  Hotfixes from
   `fix/` branches should be merged both to master and to these
   branches.  When necessary to create a new patch release these
   release branches will have their `__version__.py` updated and be
   tagged with a patched semantic version (e.g. `0.24.1`).  This
-  triggers CI to push to PyPi, and allow us to rapidly push hotfixes
+  triggers CI to push to PyPI, and allow us to rapidly push hotfixes
   for past versions of `pyvista` without having to worry about
   untested features.
 - When a minor release candidate is ready, a new `release` branch will
@@ -290,7 +314,7 @@ and ensure all are passing.
 no links are outdated. Be sure to run `make clean` to ensure no results are
 cached.
     ```bash
-    cd docs
+    cd doc
     make clean  # deletes the sphinx-gallery cache
     make doctest
     make html -b linkcheck

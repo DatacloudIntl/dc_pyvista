@@ -77,7 +77,7 @@ class PointSet(DataSet):
 
         >>> import pyvista
         >>> letter_a = pyvista.examples.download_letter_a()
-        >>> letter_a.remove_cells(range(1000))
+        >>> trimmed = letter_a.remove_cells(range(1000))
         """
         if isinstance(ind, np.ndarray):
             if ind.dtype == np.bool_ and ind.size != self.n_cells:
@@ -94,8 +94,7 @@ class PointSet(DataSet):
         target.cell_arrays[_vtk.vtkDataSetAttributes.GhostArrayName()] = ghost_cells
         target.RemoveGhostCells()
 
-        if not inplace:
-            return target
+        return target
 
 
 class PolyData(_vtk.vtkPolyData, PointSet, PolyDataFilters):
@@ -889,8 +888,6 @@ class UnstructuredGrid(_vtk.vtkUnstructuredGrid, PointGrid, UnstructuredGridFilt
         >>> grid.plot(color='w', show_edges=True, show_bounds=True)  # doctest: +SKIP
 
         """
-        # `GlobalWarningDisplayOff` is used below to hide errors during the cell blanking.
-        # <https://discourse.vtk.org/t/error-during-the-cell-blanking-of-explicit-structured-grid/4863>
         if not _vtk.VTK9:
             raise AttributeError('VTK 9 or higher is required')
         s1 = {'BLOCK_I', 'BLOCK_J', 'BLOCK_K'}
@@ -898,7 +895,6 @@ class UnstructuredGrid(_vtk.vtkUnstructuredGrid, PointGrid, UnstructuredGridFilt
         if not s1.issubset(s2):
             raise TypeError("'BLOCK_I', 'BLOCK_J' and 'BLOCK_K' cell arrays are required")
         alg = _vtk.vtkUnstructuredGridToExplicitStructuredGrid()
-        alg.GlobalWarningDisplayOff()
         alg.SetInputData(self)
         alg.SetInputArrayToProcess(0, 0, 0, 1, 'BLOCK_I')
         alg.SetInputArrayToProcess(1, 0, 0, 1, 'BLOCK_J')
@@ -1137,33 +1133,27 @@ class ExplicitStructuredGrid(_vtk.vtkExplicitStructuredGrid, PointGrid):
     --------
     >>> import numpy as np
     >>> import pyvista as pv
-    >>>
+    >>> 
+    >>> # grid size: ni*nj*nk cells; si, sj, sk steps
     >>> ni, nj, nk = 4, 5, 6
     >>> si, sj, sk = 20, 10, 1
-    >>>
-    >>> xcorn = np.arange(0, (ni+1)*si, si)
-    >>> xcorn = np.repeat(xcorn, 2)
-    >>> xcorn = xcorn[1:-1]
-    >>> xcorn = np.tile(xcorn, 4*nj*nk)
-    >>>
-    >>> ycorn = np.arange(0, (nj+1)*sj, sj)
-    >>> ycorn = np.repeat(ycorn, 2)
-    >>> ycorn = ycorn[1:-1]
-    >>> ycorn = np.tile(ycorn, (2*ni, 2*nk))
-    >>> ycorn = np.transpose(ycorn)
-    >>> ycorn = ycorn.flatten()
-    >>>
-    >>> zcorn = np.arange(0, (nk+1)*sk, sk)
-    >>> zcorn = np.repeat(zcorn, 2)
-    >>> zcorn = zcorn[1:-1]
-    >>> zcorn = np.repeat(zcorn, (4*ni*nj))
-    >>>
-    >>> corners = np.stack((xcorn, ycorn, zcorn))
-    >>> corners = corners.transpose()
-    >>>
-    >>> dims = np.asarray((ni, nj, nk))+1
-    >>> grid = pv.ExplicitStructuredGrid(dims, corners)  # doctest: +SKIP
-    >>> grid.compute_connectivity()  # doctest: +SKIP
+    >>> 
+    >>> # create raw coordinate grid
+    >>> grid_ijk = np.mgrid[:(ni+1)*si:si, :(nj+1)*sj:sj, :(nk+1)*sk:sk]
+    >>> 
+    >>> # repeat array along each Cartesian axis for connectivity
+    >>> for axis in range(1, 4):
+    ...     grid_ijk = grid_ijk.repeat(2, axis=axis)
+    >>> 
+    >>> # slice off unnecessarily doubled edge coordinates
+    >>> grid_ijk = grid_ijk[:, 1:-1, 1:-1, 1:-1]
+    >>> 
+    >>> # reorder and reshape to VTK order
+    >>> corners = grid_ijk.transpose().reshape(-1, 3)
+    >>> 
+    >>> dims = np.array([ni, nj, nk]) + 1
+    >>> grid = pv.ExplicitStructuredGrid(dims, corners)
+    >>> _ = grid.compute_connectivity()
     >>> grid.plot(show_edges=True)  # doctest: +SKIP
 
     """
@@ -1360,16 +1350,13 @@ class ExplicitStructuredGrid(_vtk.vtkExplicitStructuredGrid, PointGrid):
         >>> grid.plot(color='w', show_edges=True, show_bounds=True)  # doctest: +SKIP
 
         """
-        # `GlobalWarningDisplayOff` is used below to hide errors
-        # during the cell blanking.
-        # <https://discourse.vtk.org/t/error-during-the-cell-blanking-of-explicit-structured-grid/4863>
         if inplace:
-            self.GlobalWarningDisplayOff()
             ind = np.asarray(ind)
             array = np.zeros(self.n_cells, dtype=np.uint8)
             array[ind] = _vtk.vtkDataSetAttributes.HIDDENCELL
             name = _vtk.vtkDataSetAttributes.GhostArrayName()
             self.cell_arrays[name] = array
+            return self
         else:
             grid = self.copy()
             grid.hide_cells(ind)
@@ -1389,9 +1376,10 @@ class ExplicitStructuredGrid(_vtk.vtkExplicitStructuredGrid, PointGrid):
 
         Returns
         -------
-        grid : ExplicitStructuredGrid or None
-            A deep copy of this grid if ``inplace=False`` or ``None``
-            otherwise.
+        grid : ExplicitStructuredGrid
+            A deep copy of this grid if ``inplace=False`` with the
+            hidden cells shown.  Otherwise, this dataset with the
+            shown cells.
 
         Examples
         --------
@@ -1410,6 +1398,7 @@ class ExplicitStructuredGrid(_vtk.vtkExplicitStructuredGrid, PointGrid):
                 array = self.cell_arrays[name]
                 ind = np.argwhere(array == _vtk.vtkDataSetAttributes.HIDDENCELL)
                 array[ind] = 0
+            return self
         else:
             grid = self.copy()
             grid.show_cells()
@@ -1604,7 +1593,7 @@ class ExplicitStructuredGrid(_vtk.vtkExplicitStructuredGrid, PointGrid):
         >>> cell = grid.extract_cells(31)  # doctest: +SKIP
         >>> ind = grid.neighbors(31)  # doctest: +SKIP
         >>> neighbors = grid.extract_cells(ind)  # doctest: +SKIP
-        >>>
+        >>> 
         >>> plotter = pv.Plotter()
         >>> plotter.add_axes()  # doctest: +SKIP
         >>> plotter.add_mesh(cell, color='r', show_edges=True)  # doctest: +SKIP
@@ -1718,9 +1707,8 @@ class ExplicitStructuredGrid(_vtk.vtkExplicitStructuredGrid, PointGrid):
 
         Returns
         -------
-        grid : ExplicitStructuredGrid or None
-            A deep copy of this grid if ``inplace=False`` or ``None``
-            otherwise.
+        grid : ExplicitStructuredGrid
+            A deep copy of this grid if ``inplace=False``.
 
         See Also
         --------
@@ -1730,7 +1718,7 @@ class ExplicitStructuredGrid(_vtk.vtkExplicitStructuredGrid, PointGrid):
         Examples
         --------
         >>> from pyvista import examples
-        >>>
+        >>> 
         >>> grid = examples.load_explicit_structured()  # doctest: +SKIP
         >>> grid.compute_connectivity()  # doctest: +SKIP
         >>> grid.plot(show_edges=True)  # doctest: +SKIP
@@ -1738,6 +1726,7 @@ class ExplicitStructuredGrid(_vtk.vtkExplicitStructuredGrid, PointGrid):
         """
         if inplace:
             self.ComputeFacesConnectivityFlagsArray()
+            return self
         else:
             grid = self.copy()
             grid.compute_connectivity()
@@ -1785,6 +1774,7 @@ class ExplicitStructuredGrid(_vtk.vtkExplicitStructuredGrid, PointGrid):
             array = np.unpackbits(array, axis=1)
             array = array.sum(axis=1)
             self.cell_arrays['number_of_connections'] = array
+            return self
         else:
             grid = self.copy()
             grid.compute_connections()

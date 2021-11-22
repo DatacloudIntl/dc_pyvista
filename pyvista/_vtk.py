@@ -20,6 +20,7 @@ except ImportError:  # pragma: no cover
 
 if VTK9:
 
+    from vtkmodules.vtkImagingHybrid import vtkSampleFunction
     from vtkmodules.vtkInteractionWidgets import (vtkScalarBarWidget,
                                                   vtkSplineWidget,
                                                   vtkSphereWidget,
@@ -43,6 +44,10 @@ if VTK9:
                                                 vtkRenderStepsPass,
                                                 vtkEDLShading,
                                                 vtkOpenGLRenderer,
+                                                vtkShadowMapPass,
+                                                vtkSequencePass,
+                                                vtkCameraPass,
+                                                vtkRenderPassCollection,
                                                 vtkOpenGLTexture)
     from vtkmodules.vtkIOInfovis import vtkDelimitedTextReader
     from vtkmodules.vtkIOPLY import (vtkPLYReader,
@@ -60,16 +65,12 @@ if VTK9:
     from vtkmodules.vtkIOImage import (vtkBMPReader,
                                        vtkDEMReader,
                                        vtkDICOMImageReader,
-                                       vtkDICOMImageReader,
-                                       vtkJPEGReader,
                                        vtkJPEGReader,
                                        vtkMetaImageReader,
-                                       vtkNrrdReader,
                                        vtkNrrdReader,
                                        vtkPNGReader,
                                        vtkPNMReader,
                                        vtkSLCReader,
-                                       vtkTIFFReader,
                                        vtkTIFFReader)
     from vtkmodules.vtkIOXML import (vtkXMLReader,
                                      vtkXMLWriter,
@@ -103,9 +104,9 @@ if VTK9:
                                         vtkRectilinearGridReader,
                                         vtkRectilinearGridWriter,
                                         vtkDataSetWriter,
-                                        vtkPolyDataReader,
                                         vtkDataSetReader)
-    from vtkmodules.vtkCommonDataModel import (vtkDataObject,
+    from vtkmodules.vtkCommonDataModel import (vtkImplicitFunction,
+                                               vtkDataObject,
                                                vtkExplicitStructuredGrid,
                                                vtkPyramid,
                                                vtkPlane,
@@ -131,6 +132,7 @@ if VTK9:
                                                vtkStaticPointLocator,
                                                vtkSelectionNode,
                                                vtkSelection,
+                                               vtkPerlinNoise,
                                                VTK_HEXAHEDRON,
                                                VTK_PYRAMID,
                                                VTK_QUAD,
@@ -150,6 +152,7 @@ if VTK9:
                                                    vtkLegendBoxActor,
                                                    vtkCubeAxesActor)
     from vtkmodules.vtkRenderingCore import (vtkTexture,
+                                             vtkSkybox,
                                              vtkPropAssembly,
                                              vtkRenderer,
                                              vtkMapper,
@@ -215,7 +218,6 @@ if VTK9:
                                           vtkTypeUInt32Array,
                                           vtkDataArray,
                                           vtkPoints,
-                                          vtkIdList,
                                           vtkLookupTable,
                                           VTK_UNSIGNED_CHAR,
                                           vtkAbstractArray,
@@ -256,8 +258,7 @@ if VTK9:
                                            vtkCellCenters,
                                            vtkConnectivityFilter,
                                            vtkCellDataToPointData,
-                                           vtkDelaunay3D,
-                                           vtkCutter)
+                                           vtkDelaunay3D)
     from vtkmodules.vtkFiltersGeneral import (vtkTableBasedClipDataSet,
                                               vtkTableToPolyData,
                                               vtkOBBTree,
@@ -266,14 +267,14 @@ if VTK9:
                                               vtkIntersectionPolyDataFilter,
                                               vtkCurvatures,
                                               vtkBoxClipDataSet,
-                                              vtkTableBasedClipDataSet,
                                               vtkWarpScalar,
                                               vtkWarpVector,
                                               vtkDataSetTriangleFilter,
                                               vtkGradientFilter,
                                               vtkShrinkFilter,
                                               vtkBooleanOperationPolyDataFilter,
-                                              vtkTransformFilter)
+                                              vtkTransformFilter,
+                                              vtkAxes)
     from vtkmodules.vtkFiltersModeling import (vtkOutlineFilter,
                                                vtkRibbonFilter,
                                                vtkLinearExtrusionFilter,
@@ -283,9 +284,9 @@ if VTK9:
                                                vtkLinearSubdivisionFilter,
                                                vtkButterflySubdivisionFilter,
                                                vtkLoopSubdivisionFilter,
+                                               vtkAdaptiveSubdivisionFilter,
                                                vtkSelectEnclosedPoints)
     from vtkmodules.vtkFiltersSources import (vtkOutlineCornerFilter,
-                                              vtkParametricFunctionSource,
                                               vtkParametricFunctionSource,
                                               vtkPlaneSource,
                                               vtkArcSource,
@@ -295,15 +296,12 @@ if VTK9:
                                               vtkArrowSource,
                                               vtkCylinderSource,
                                               vtkSphereSource,
-                                              vtkPlaneSource,
                                               vtkLineSource,
-                                              vtkCubeSource,
                                               vtkConeSource,
                                               vtkDiskSource,
                                               vtkRegularPolygonSource,
-                                              vtkLineSource,
                                               vtkPointSource,
-                                              vtkArrowSource)
+                                              vtkFrustumSource)
     from vtkmodules.vtkFiltersGeometry import (vtkGeometryFilter,
                                                vtkStructuredGridGeometryFilter,
                                                vtkCompositeDataGeometryFilter,
@@ -323,6 +321,7 @@ if VTK9:
     from vtkmodules.vtkImagingCore import (vtkExtractVOI,
                                            vtkImageExtractComponents,
                                            vtkImageDifference,
+                                           vtkImageFlip,
                                            vtkRTAnalyticSource)
     from vtkmodules.vtkFiltersFlowPaths import vtkStreamTracer
     from vtkmodules.vtkCommonExecutionModel import vtkImageToStructuredGrid
