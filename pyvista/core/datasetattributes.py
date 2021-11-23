@@ -326,11 +326,13 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
             Requested array.
         """
         self._raise_index_out_of_bounds(index=key)
-        vtk_arr = self.GetArray(key)
-        if vtk_arr:
-            copy = vtk_arr.NewInstance()
-            copy.DeepCopy(vtk_arr)
-            vtk_arr = copy
+        vtk_arr = self.get_array(key)
+
+        # if not (vtk_arr is None):
+        #     copy = vtk_arr.NewInstance()
+        #     copy.DeepCopy(vtk_arr)
+        #     vtk_arr = copy
+
         try:
             self.remove(key)
         except KeyError:
