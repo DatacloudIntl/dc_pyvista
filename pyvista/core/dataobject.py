@@ -97,7 +97,7 @@ class DataObject:
             texture array will be saved as ``'RGBA'``
 
             .. note::
-               This feature is only available when saving PLY files. 
+               This feature is only available when saving PLY files.
 
         Notes
         -----
@@ -328,7 +328,7 @@ class DataObject:
         Add field data to a UniformGrid dataset.
 
         >>> mesh = pyvista.UniformGrid((2, 2, 1))
-        >>> mesh.add_field_data(['I could', 'write', 'notes', 'here'], 
+        >>> mesh.add_field_data(['I could', 'write', 'notes', 'here'],
         ...                      'my-field-data')
         >>> mesh['my-field-data']
         array(['I could', 'write', 'notes', 'here'], dtype='<U7')
@@ -496,12 +496,17 @@ class DataObject:
     def __getstate__(self):
         """Support pickle. Serialize the VTK object to ASCII string."""
         state = self.__dict__.copy()
-        writer = _vtk.vtkDataSetWriter()
-        writer.SetInputDataObject(self)
-        writer.SetWriteToOutputString(True)
-        writer.SetFileTypeToBinary()
-        writer.Write()
-        to_serialize = writer.GetOutputStdString()
+        try:
+            from dcpipe.vtktools import to_bytes
+            to_serialize = to_bytes(self)
+        except:
+            writer = _vtk.vtkDataSetWriter()
+            writer.SetInputDataObject(self)
+            writer.SetCompressorTypeToLZ4()
+            writer.SetWriteToOutputString(True)
+            writer.SetFileTypeToBinary()
+            writer.Write()
+            to_serialize = writer.GetOutputStdString()
         state['vtk_serialized'] = to_serialize
         return state
 
@@ -509,15 +514,23 @@ class DataObject:
         """Support unpickle."""
         vtk_serialized = state.pop('vtk_serialized')
         self.__dict__.update(state)
-        reader = _vtk.vtkDataSetReader()
-        reader.ReadFromInputStringOn()
-        if isinstance(vtk_serialized, bytes):
-            reader.SetBinaryInputString(vtk_serialized, len(vtk_serialized))
-        elif isinstance(vtk_serialized, str):
-            reader.SetInputString(vtk_serialized)
-        reader.Update()
-        mesh = pyvista.wrap(reader.GetOutput())
+        try:
+            from dcpipe.vtktools import from_bytes
+            mesh = from_bytes(vtk_serialized)
+        except:
+            reader = _vtk.vtkDataSetReader()
+            reader.ReadFromInputStringOn()
+            if isinstance(vtk_serialized, bytes):
+                reader.SetBinaryInputString(vtk_serialized, len(vtk_serialized))
+            elif isinstance(vtk_serialized, str):
+                reader.SetInputString(vtk_serialized)
+            reader.Update()
+            mesh = pyvista.wrap(reader.GetOutput())
 
         # copy data
-        self.copy_structure(mesh)
-        self.copy_attributes(mesh)
+        if hasattr(self, 'CopyStructure'):
+            self.copy_structure(mesh)
+        if hasattr(self, 'CopyAttributes'):
+            self.copy_attributes(mesh)
+        elif hasattr(self, 'ShallowCopy'):
+            self.ShallowCopy(mesh)

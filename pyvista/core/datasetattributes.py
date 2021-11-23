@@ -546,6 +546,9 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         if narray is None:
             raise TypeError('narray cannot be None.')
 
+        if isinstance(narray, Iterable):
+            narray = pyvista_ndarray(narray)
+
         if isinstance(narray, pd.Series):
             if np.issubdtype(narray.dtype, np.object):
                 narray = narray.convert_dtypes()
@@ -553,9 +556,6 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
                     narray = narray.to_numpy(str, na_value=string_na_value)
                 else:
                     narray = narray.to_numpy()
-
-        if isinstance(narray, Iterable):
-            narray = pyvista_ndarray(narray)
 
         if categorical_to_ints:
             if not (type(self.VTKObject).__vtkname__ in ['vtkFieldData']):
@@ -570,7 +570,7 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
                     # narray = np.searchsorted(unique_values, narray).astype(float)
                     # narray[nans] = np.nan
 
-                    self.dataset.add_field_array(unique_values, name)
+                    self.dataset.field_data[name] = unique_values
 
         return narray
 
@@ -637,7 +637,7 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         scalars.
 
         """
-        vtk_arr = self._datacloud_prepare_array(data, name, categorical_to_ints=categorical_to_ints, string_na_value=string_na_value)
+        data = self._datacloud_prepare_array(data, name, categorical_to_ints=categorical_to_ints, string_na_value=string_na_value)
         vtk_arr = self._prepare_array(data, name, deep_copy)
         self.VTKObject.AddArray(vtk_arr)
         self.VTKObject.Modified()
