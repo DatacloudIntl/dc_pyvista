@@ -20,7 +20,8 @@ except ImportError:  # pragma: no cover
 
 if VTK9:
 
-    from vtkmodules.vtkImagingHybrid import vtkSampleFunction
+    from vtkmodules.vtkImagingHybrid import (vtkSampleFunction,
+                                             vtkSurfaceReconstructionFilter)
     from vtkmodules.vtkInteractionWidgets import (vtkScalarBarWidget,
                                                   vtkSplineWidget,
                                                   vtkSphereWidget,
@@ -61,6 +62,7 @@ if VTK9:
                                           vtkOpenFOAMReader,
                                           vtkSTLWriter,
                                           vtkBYUReader,
+                                          vtkGLTFReader,
                                           vtkOBJReader)
     from vtkmodules.vtkIOImage import (vtkBMPReader,
                                        vtkDEMReader,
@@ -71,6 +73,7 @@ if VTK9:
                                        vtkPNGReader,
                                        vtkPNMReader,
                                        vtkSLCReader,
+                                       vtkHDRReader,
                                        vtkTIFFReader)
     from vtkmodules.vtkIOXML import (vtkXMLReader,
                                      vtkXMLWriter,
@@ -121,7 +124,9 @@ if VTK9:
                                                vtkPlaneCollection,
                                                vtkDataSet,
                                                vtkPointLocator,
+                                               vtkGenericCell,
                                                vtkCellLocator,
+                                               vtkStaticCellLocator,
                                                vtkMultiBlockDataSet,
                                                vtkCompositeDataSet,
                                                vtkFieldData,
@@ -151,6 +156,7 @@ if VTK9:
                                                    vtkAnnotatedCubeActor,
                                                    vtkLegendBoxActor,
                                                    vtkCubeAxesActor)
+    from vtkmodules.vtkRenderingUI import vtkGenericRenderWindowInteractor
     from vtkmodules.vtkRenderingCore import (vtkTexture,
                                              vtkSkybox,
                                              vtkPropAssembly,
@@ -201,7 +207,8 @@ if VTK9:
                                                            vtkParametricSuperToroid,
                                                            vtkParametricTorus,
                                                            vtkParametricFunction,
-                                                           vtkParametricBohemianDome)
+                                                           vtkParametricBohemianDome,
+                                                           vtkKochanekSpline)
     from vtkmodules.vtkCommonCore import (VTK_COURIER,
                                           VTK_TIMES,
                                           VTK_ARIAL,
@@ -209,6 +216,10 @@ if VTK9:
                                           vtkIdTypeArray,
                                           vtkCharArray,
                                           vtkBitArray,
+                                          vtkFloatArray,
+                                          vtkTypeInt32Array,
+                                          vtkTypeInt64Array,
+                                          vtkSignedCharArray,
                                           vtkFileOutputWindow,
                                           vtkOutputWindow,
                                           vtkStringOutputWindow,
@@ -221,7 +232,8 @@ if VTK9:
                                           vtkLookupTable,
                                           VTK_UNSIGNED_CHAR,
                                           vtkAbstractArray,
-                                          vtkDoubleArray)
+                                          vtkDoubleArray,
+                                          mutable)
     from vtkmodules.vtkCommonMath import (vtkMatrix4x4,
                                           vtkMatrix3x3)
     from vtkmodules.vtkCommonTransforms import vtkTransform
@@ -266,6 +278,7 @@ if VTK9:
                                               vtkClipClosedSurface,
                                               vtkIntersectionPolyDataFilter,
                                               vtkCurvatures,
+                                              vtkCursor3D,
                                               vtkBoxClipDataSet,
                                               vtkWarpScalar,
                                               vtkWarpVector,
@@ -274,7 +287,8 @@ if VTK9:
                                               vtkShrinkFilter,
                                               vtkBooleanOperationPolyDataFilter,
                                               vtkTransformFilter,
-                                              vtkAxes)
+                                              vtkAxes,
+                                              vtkCellTreeLocator)
     from vtkmodules.vtkFiltersModeling import (vtkOutlineFilter,
                                                vtkRibbonFilter,
                                                vtkLinearExtrusionFilter,
@@ -285,6 +299,7 @@ if VTK9:
                                                vtkButterflySubdivisionFilter,
                                                vtkLoopSubdivisionFilter,
                                                vtkAdaptiveSubdivisionFilter,
+                                               vtkCollisionDetectionFilter,
                                                vtkSelectEnclosedPoints)
     from vtkmodules.vtkFiltersSources import (vtkOutlineCornerFilter,
                                               vtkParametricFunctionSource,
@@ -301,6 +316,7 @@ if VTK9:
                                               vtkDiskSource,
                                               vtkRegularPolygonSource,
                                               vtkPointSource,
+                                              vtkPlatonicSolidSource,
                                               vtkFrustumSource)
     from vtkmodules.vtkFiltersGeometry import (vtkGeometryFilter,
                                                vtkStructuredGridGeometryFilter,
@@ -323,7 +339,7 @@ if VTK9:
                                            vtkImageDifference,
                                            vtkImageFlip,
                                            vtkRTAnalyticSource)
-    from vtkmodules.vtkFiltersFlowPaths import vtkStreamTracer
+    from vtkmodules.vtkFiltersFlowPaths import vtkEvenlySpacedStreamlines2D, vtkStreamTracer
     from vtkmodules.vtkCommonExecutionModel import vtkImageToStructuredGrid
     from vtkmodules.numpy_interface.dataset_adapter import (VTKObjectWrapper,
                                                             numpyTovtkDataArray,
@@ -418,4 +434,23 @@ else:  # pragma: no cover
     class vtkExplicitStructuredGrid():  # type: ignore
         """Empty placeholder for VTK9 compatibility."""
 
-        pass
+        def __init__(self):  # pragma: no cover
+            """Raise version error on init."""
+            from pyvista.core.errors import VTKVersionError
+            raise VTKVersionError('vtkHDRReader requires VTK v9 or newer')
+
+    class vtkHDRReader():   # type: ignore
+        """Empty placeholder for VTK9 compatibility."""
+
+        def __init__(self):  # pragma: no cover
+            """Raise version error on init."""
+            from pyvista.core.errors import VTKVersionError
+            raise VTKVersionError('vtkHDRReader requires VTK v9 or newer')
+
+    class vtkGLTFReader():   # type: ignore
+        """Empty placeholder for VTK9 compatibility."""
+
+        def __init__(self):  # pragma: no cover
+            """Raise version error on init."""
+            from pyvista.core.errors import VTKVersionError
+            raise VTKVersionError('vtkGLTFReader requires VTK v9 or newer')

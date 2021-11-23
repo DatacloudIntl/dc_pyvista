@@ -8,6 +8,7 @@ General Utilities
    utilities.VtkErrorCatcher
    utilities.set_error_output_file
    utilities.is_inside_bounds
+   utilities.axis_rotation
 
 
 Object Conversions
@@ -57,9 +58,6 @@ Array Access
    point_array
    cell_array
    field_array
-   get_vtk_type
-   vtk_bit_array_to_char
-   convert_string_array
 
 
 Image Comparison and Regression
@@ -68,3 +66,11 @@ Image Comparison and Regression
    :toctree: _autosummary
 
    compare_images
+
+
+Miscellaneous
+~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: _autosummary
+
+   start_xvfb

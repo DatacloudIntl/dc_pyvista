@@ -2,7 +2,7 @@ Parametric Objects
 ------------------
 
 The following functions can be used to create parametric surfaces.  To
-see what these functions create, check out the example: :ref:`ref_parametric_example`.
+see additional examples, see :ref:`ref_parametric_example`.
 
 .. currentmodule:: pyvista
 
@@ -13,6 +13,9 @@ see what these functions create, check out the example: :ref:`ref_parametric_exa
    ParametricBour
    ParametricBoy
    ParametricDini
+   ParametricCatalanMinimal
+   ParametricConicSpiral
+   ParametricCrossCap
    ParametricEllipsoid
    ParametricEnneper
    ParametricFigure8Klein
