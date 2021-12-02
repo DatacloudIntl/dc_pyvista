@@ -546,16 +546,20 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         if narray is None:
             raise TypeError('narray cannot be None.')
 
+        if isinstance(narray, pd.Series):
+            if pd.core.dtypes.cast.is_object_dtype(narray):
+                narray = narray.convert_dtypes()
+            if pd.core.dtypes.cast.is_string_dtype(narray):
+                narray = narray.to_numpy(str, na_value=string_na_value)
+
         if isinstance(narray, Iterable):
             narray = pyvista_ndarray(narray)
 
-        if isinstance(narray, pd.Series):
-            if np.issubdtype(narray.dtype, np.object):
-                narray = narray.convert_dtypes()
-                if np.issubdtype(narray.dtype.type, np.str_):
-                    narray = narray.to_numpy(str, na_value=string_na_value)
-                else:
-                    narray = narray.to_numpy()
+        if pd.core.dtypes.cast.is_string_dtype(narray):
+            narray = narray.astype('U')
+            if int(narray.dtype.str[2:]) < 4:
+                narray = narray.astype(f'<U{len(str(string_na_value))}')
+            narray[pd.isna(narray)] = str(string_na_value)
 
         if categorical_to_ints:
             if not (type(self.VTKObject).__vtkname__ in ['vtkFieldData']):
@@ -563,12 +567,6 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
                     narray = narray.astype(str)
                     unique_values = np.unique(narray)
                     narray = np.searchsorted(unique_values, narray)
-
-                    # In case we want to keep nans on the indices
-                    # nans = pd.isna(narray) | np.isin(narray, ['nan'])
-                    # unique_values = np.unique(narray)
-                    # narray = np.searchsorted(unique_values, narray).astype(float)
-                    # narray[nans] = np.nan
 
                     self.dataset.field_data[name] = unique_values
 
@@ -637,7 +635,11 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         scalars.
 
         """
-        data = self._datacloud_prepare_array(data, name, categorical_to_ints=categorical_to_ints, string_na_value=string_na_value)
+        data = self._datacloud_prepare_array(
+            data,
+            name,
+            categorical_to_ints=categorical_to_ints,
+            string_na_value=string_na_value)
         vtk_arr = self._prepare_array(data, name, deep_copy)
         self.VTKObject.AddArray(vtk_arr)
         self.VTKObject.Modified()
@@ -1054,7 +1056,7 @@ class DataSetAttributes(_vtk.VTKObjectWrapper):
         """
         for name, array in array_dict.items():
             # self[name] = array.copy()
-            self.append(narray=array.copy(), name=name, categorical_to_ints=categorical_to_ints, string_na_value=string_na_value)
+            self.set_array(array.copy(), name, categorical_to_ints=categorical_to_ints, string_na_value=string_na_value)
 
     def _raise_index_out_of_bounds(self, index: Any):
         max_index = self.VTKObject.GetNumberOfArrays()
